@@ -1,0 +1,138 @@
+{
+  "personal_info": {
+    "name": "M'hamed Babah",
+    "email": "mhamed.bbh01@gmail.com",
+    "phone": "+222 34503710",
+    "location": "Nouakchott, Mauritania",
+    "linkedin": "mhamed-elbah-6a954b211",
+    "github": "medbbh"
+  },
+  "job_search": {
+    "target_keywords": [
+      "software developer",
+      "full stack developer", 
+      "python developer",
+      "javascript developer",
+      "backend developer",
+      "frontend developer",
+      "web developer",
+      "react developer",
+      "django developer",
+      "node.js developer"
+    ],
+    "exclude_keywords": [
+      "senior software",
+      "lead developer", 
+      "principal engineer",
+      "engineering manager",
+      "director",
+      "10+ years",
+      "15+ years",
+      "phd required",
+      "security clearance",
+      "us citizen only",
+      "no sponsorship"
+    ],
+    "target_locations": [
+      "United States",
+      "Germany", 
+      "Netherlands",
+      "Canada",
+      "United Kingdom",
+      "France",
+      "Sweden",
+      "Norway",
+      "Denmark",
+      "Switzerland",
+      "Austria"
+    ],
+    "visa_sponsorship_keywords": [
+      "visa sponsorship",
+      "h1b sponsorship",
+      "h-1b visa",
+      "work permit sponsorship", 
+      "immigration support",
+      "sponsor visa",
+      "international candidates welcome",
+      "work authorization assistance",
+      "visa assistance",
+      "sponsorship available"
+    ],
+    "company_size_preference": [
+      "startup",
+      "small",
+      "medium",
+      "large"
+    ],
+    "remote_work": {
+      "accept_remote": true,
+      "prefer_remote": true,
+      "accept_hybrid": true,
+      "accept_onsite": true
+    },
+    "max_applications_per_day": 5,
+    "scan_frequency_hours": 6,
+    "min_delay_between_applications": 300,
+    "max_delay_between_applications": 900
+  },
+  "mistral_ai": {
+    "api_key_env": "MISTRAL_API_KEY",
+    "model": "mistral-large-latest",
+    "temperature": 0.3,
+    "max_tokens": 1000,
+    "timeout_seconds": 30
+  },
+  "email_notifications": {
+    "enabled": true,
+    "email_env": "EMAIL_ADDRESS",
+    "password_env": "EMAIL_PASSWORD",
+    "smtp_server_env": "EMAIL_SMTP_SERVER",
+    "smtp_port_env": "EMAIL_SMTP_PORT",
+    "daily_summary": true,
+    "error_alerts": true,
+    "success_notifications": true,
+    "weekly_reports": true
+  },
+  "resume_customization": {
+    "base_title": "Full Stack Developer",
+    "base_summary": "Full Stack Developer with expertise in building secure, data-intensive applications using Python, JavaScript, and modern frameworks. Proven experience in blockchain systems, real-time dashboards, and scalable API design with international competition success.",
+    "highlight_visa_need": true,
+    "emphasize_international_experience": true,
+    "include_freelance_experience": true,
+    "customize_with_ai": true,
+    "fallback_to_basic": true
+  },
+  "application_strategy": {
+    "prioritize_recent_posts": true,
+    "max_job_age_days": 7,
+    "avoid_large_companies_initially": false,
+    "focus_on_startups": true,
+    "target_tech_hubs": true,
+    "apply_to_remote_positions": true,
+    "skip_already_applied": true,
+    "minimum_match_score": 0.6
+  },
+  "scraping": {
+    "max_pages_per_site": 5,
+    "request_timeout": 30,
+    "retry_attempts": 3,
+    "use_proxy": false,
+    "rotate_user_agents": true,
+    "respect_robots_txt": true
+  },
+  "tracking": {
+    "follow_up_days": [7, 14, 30],
+    "track_application_sources": true,
+    "analyze_success_patterns": true,
+    "generate_weekly_reports": true,
+    "database_file": "data/job_applications.db",
+    "backup_frequency_days": 7
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/job_bot.log",
+    "max_file_size_mb": 10,
+    "backup_count": 5,
+    "console_output": true
+  }
+}
