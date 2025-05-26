@@ -1,0 +1,82 @@
+\documentclass[11pt, letterpaper]{article}
+
+% Packages:
+\usepackage[
+    ignoreheadfoot,
+    top=2.5cm,
+    bottom=2.5cm,
+    left=2.5cm,
+    right=2.5cm,
+    footskip=1.2cm,
+]{geometry} 
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{primaryColor}{RGB}{0, 0, 0}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=primaryColor}
+\usepackage{bookmark}
+\usepackage{lastpage}
+\usepackage{paracol}
+\usepackage{charter}
+\usepackage{setspace}
+\onehalfspacing
+
+\raggedright
+\pagestyle{empty}
+\setcounter{secnumdepth}{0}
+\setlength{\parindent}{0pt}
+\setlength{\columnsep}{0.3cm}
+\pagenumbering{gobble}
+
+\titleformat{\section}{\bfseries\large}{}{0pt}{}[\vspace{2pt}\titlerule]
+\titlespacing{\section}{-1pt}{0.4cm}{0.3cm}
+
+\begin{document}
+
+\begin{center}
+    \fontsize{22pt}{22pt}\selectfont \textbf{{FULL_NAME}}
+    \vspace{8pt}
+
+    \normalsize
+    \faEnvelope\ \href{mailto:{EMAIL}}{{EMAIL}} \quad
+    \faPhone\ {PHONE}\\
+    \faLinkedin\ \href{{LINKEDIN_URL}}{{LINKEDIN_TEXT}} \quad
+    \faGithub\ \href{{GITHUB_URL}}{{GITHUB_TEXT}}
+\end{center}
+
+\section{Professional Summary}
+{PROFESSIONAL_SUMMARY}
+
+\section{Education}
+{EDUCATION_SECTION}
+
+\section{Relevant Courses}
+\begin{itemize}[noitemsep,topsep=0pt]
+    \item Cloud Computing, Distributed Systems, Algorithms and Data Structures, Information Systems Security
+    \item Databases (SQL/NoSQL), Agile Methods, Design Patterns
+\end{itemize}
+
+\section{Experience}
+{EXPERIENCE_SECTION}
+
+\section{Projects}
+{PROJECTS_SECTION}
+
+\section{Technical Skills}
+\textbf{Languages}: {LANGUAGES}\\
+\textbf{Frontend}: {FRONTEND}\\
+\textbf{Backend}: {BACKEND}\\
+\textbf{Databases}: {DATABASES}\\
+\textbf{Tools}: {TOOLS}\\
+
+\section{Certifications and Training}
+{CERTIFICATIONS_SECTION}
+
+\section{International Experience}
+{INTERNATIONAL_EXPERIENCE}
+
+\end{document}

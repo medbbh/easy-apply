@@ -2,7 +2,9 @@ from flask import Flask, render_template, jsonify, request, send_file, abort
 from pathlib import Path
 import threading
 import json
-import os
+
+from job_scraper import JobScraper
+from document_generator import DocumentGenerator
 
 app = Flask(__name__)
 
@@ -12,15 +14,15 @@ class SimpleJobBot:
         self.base_output_dir.mkdir(exist_ok=True)
         self.current_results = []
         self.is_searching = False
+        self.scraper = JobScraper()
+        self.doc_generator = DocumentGenerator()
         
-    def search_jobs(self, keywords):
+    def search_jobs(self, keywords, user_profile=None):
         self.is_searching = True
         self.current_results = []
         
         try:
-            from job_scraper import JobScraper
-            scraper = JobScraper()
-            results = scraper.search_and_prepare(keywords)
+            results = self.scraper.search_and_prepare(keywords, self.doc_generator, user_profile)
             self.current_results = results
         except Exception as e:
             print(f"Error during job search: {e}")
@@ -45,16 +47,16 @@ def index():
 def search_jobs():
     data = request.get_json() or {}
     keywords = data.get('keywords', [])
+    user_profile = data.get('userProfile')
     
     if not keywords:
         return jsonify({'error': 'No keywords provided'}), 400
     
-    # Start search in background
-    thread = threading.Thread(target=job_bot.search_jobs, args=(keywords,))
+    thread = threading.Thread(target=job_bot.search_jobs, args=(keywords, user_profile))
     thread.daemon = True
     thread.start()
     
-    return jsonify({'status': 'started', 'message': 'Job search started'})
+    return jsonify({'status': 'started', 'message': 'Job search started with user profile'})
 
 @app.route('/api/status')
 def get_status():
@@ -64,19 +66,49 @@ def get_status():
 def get_results():
     return jsonify(job_bot.current_results)
 
+@app.route('/view/resume/<folder_name>')
+def view_resume(folder_name):
+    """View resume PDF in browser"""
+    try:
+        job_folder = job_bot.base_output_dir / folder_name
+        pdf_file = job_folder / "resume.pdf"
+        
+        if not pdf_file.exists():
+            abort(404)
+        
+        return send_file(pdf_file, mimetype='application/pdf')
+        
+    except Exception as e:
+        print(f"Error viewing resume: {e}")
+        abort(500)
+
+@app.route('/view/cover-letter/<folder_name>')
+def view_cover_letter(folder_name):
+    """View cover letter PDF in browser"""
+    try:
+        job_folder = job_bot.base_output_dir / folder_name
+        pdf_file = job_folder / "cover_letter.pdf"
+        
+        if not pdf_file.exists():
+            abort(404)
+        
+        return send_file(pdf_file, mimetype='application/pdf')
+        
+    except Exception as e:
+        print(f"Error viewing cover letter: {e}")
+        abort(500)
+
 @app.route('/download/resume/<folder_name>')
 def download_resume(folder_name):
-    """Download resume file - PDF priority, fallback to tex/txt"""
+    """Download resume file - PDF priority, fallback to txt"""
     try:
         job_folder = job_bot.base_output_dir / folder_name
         
         if not job_folder.exists():
             abort(404)
         
-        # Priority order: PDF > LaTeX > TXT
         file_options = [
             (job_folder / "resume.pdf", "application/pdf", "pdf"),
-            (job_folder / "resume.tex", "application/x-latex", "tex"),
             (job_folder / "resume.txt", "text/plain", "txt")
         ]
         
@@ -104,7 +136,6 @@ def download_cover_letter(folder_name):
         if not job_folder.exists():
             abort(404)
         
-        # Priority order: PDF > TXT
         file_options = [
             (job_folder / "cover_letter.pdf", "application/pdf", "pdf"),
             (job_folder / "cover_letter.txt", "text/plain", "txt")
@@ -160,13 +191,10 @@ def get_folder_contents(folder_name):
             'files': []
         }
         
-        # Check for different file types
         file_types = [
             ('resume.pdf', 'Resume (PDF)', 'application/pdf'),
-            ('resume.tex', 'Resume (LaTeX)', 'application/x-latex'),
             ('resume.txt', 'Resume (Text)', 'text/plain'),
             ('cover_letter.pdf', 'Cover Letter (PDF)', 'application/pdf'),
-            ('cover_letter.tex', 'Cover Letter (LaTeX)', 'application/x-latex'),
             ('cover_letter.txt', 'Cover Letter (Text)', 'text/plain'),
             ('job_info.json', 'Job Information', 'application/json')
         ]
@@ -187,73 +215,14 @@ def get_folder_contents(folder_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/test-latex')
-def test_latex():
-    """Test if LaTeX is properly installed"""
-    try:
-        import subprocess
-        result = subprocess.run(['pdflatex', '--version'], 
-                              capture_output=True, text=True, timeout=10)
-        
-        if result.returncode == 0:
-            version_info = result.stdout.split('\n')[0] if result.stdout else "LaTeX installed"
-            return jsonify({
-                'latex_available': True,
-                'version': version_info,
-                'message': 'LaTeX is properly installed and ready to generate PDFs!'
-            })
-        else:
-            return jsonify({
-                'latex_available': False,
-                'message': 'LaTeX command failed',
-                'error': result.stderr
-            })
-            
-    except subprocess.TimeoutExpired:
-        return jsonify({
-            'latex_available': False,
-            'message': 'LaTeX command timed out'
-        })
-    except FileNotFoundError:
-        return jsonify({
-            'latex_available': False,
-            'message': 'LaTeX not found in system PATH',
-            'instructions': {
-                'Windows': 'Add MiKTeX to your system PATH or restart your terminal',
-                'macOS': 'brew install --cask mactex',
-                'Linux': 'sudo apt-get install texlive-latex-extra'
-            }
-        })
-    except Exception as e:
-        return jsonify({
-            'latex_available': False,
-            'message': f'Error testing LaTeX: {str(e)}'
-        })
-
 if __name__ == '__main__':
     Path('templates').mkdir(exist_ok=True)
     
-    print("🚀 Job Application Bot with PDF Downloads running at http://localhost:5000")
-    print("📄 Testing LaTeX installation...")
-    
-    # Test LaTeX on startup
-    try:
-        import subprocess
-        result = subprocess.run(['pdflatex', '--version'], 
-                              capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            print("✅ LaTeX is installed and ready!")
-            print("📄 PDFs will be generated for resumes and cover letters")
-        else:
-            print("⚠️ LaTeX command failed")
-    except:
-        print("❌ LaTeX not found - only text files will be generated")
-        print("\n📋 To generate PDFs, install LaTeX:")
-        print("   🪟 Windows: Add MiKTeX to your PATH or restart terminal")
-        print("   🍎 macOS: brew install --cask mactex")
-        print("   🐧 Linux: sudo apt-get install texlive-latex-extra")
+    print("🚀 Job Application Bot with User Profiles running at http://localhost:5000")
+    print("📄 Using ReportLab for PDF generation - no external dependencies needed!")
+    print("👤 Users can now customize their profile for personalized documents!")
+    print("✅ PDFs will be generated for all resumes and cover letters")
     
     print("\n🌐 Visit: http://localhost:5000")
-    print("🔧 Test LaTeX: http://localhost:5000/api/test-latex")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
