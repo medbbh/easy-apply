@@ -1,0 +1,124 @@
+\documentclass[11pt,a4paper]{letter}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[scale=0.8]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fontawesome}
+
+% Define colors
+\definecolor{primarycolor}{RGB}{51, 102, 187}
+\definecolor{secondarycolor}{RGB}{117, 117, 117}
+
+% Custom commands
+\newcommand{\highlight}[1]{\textcolor{primarycolor}{\textbf{#1}}}
+\newcommand{\contact}[1]{\textcolor{secondarycolor}{#1}}
+
+% Letter settings
+\signature{M'hamed Babah}
+\address{
+M'hamed Babah \\
+Software Developer \& IT Professional \\
+Nouakchott, Mauritania \\
+\contact{\faEnvelope\ mhamed.bbh01@gmail.com} \\
+\contact{\faPhone\ +222 34503710} \\
+\contact{\faLinkedin\ linkedin.com/in/mhamed-elbah-6a954b211} \\
+\contact{\faGithub\ github.com/medbbh}
+}
+
+\begin{document}
+
+% Header with professional styling
+\begin{center}
+{\Large \textbf{\textcolor{primarycolor}{M'hamed Babah}}} \\
+\vspace{0.2cm}
+{\textcolor{secondarycolor}{Software Developer \& IT Professional}} \\
+\vspace{0.3cm}
+\textcolor{secondarycolor}{\faEnvelope\ mhamed.bbh01@gmail.com \quad \faPhone\ +222 34503710} \\
+\textcolor{secondarycolor}{\faLinkedin\ linkedin.com/in/mhamed-elbah-6a954b211 \quad \faGithub\ github.com/medbbh}
+\end{center}
+
+\vspace{0.5cm}
+
+% Date
+\begin{flushright}
+{APPLICATION_DATE}
+\end{flushright}
+
+\vspace{0.3cm}
+
+% Recipient
+\begin{flushleft}
+\textbf{{TARGET_COMPANY} Hiring Team} \\
+\highlight{{TARGET_POSITION}} Position \\
+{TARGET_LOCATION}
+\end{flushleft}
+
+\vspace{0.5cm}
+
+% Salutation
+Dear \highlight{{TARGET_COMPANY}} Hiring Team,
+
+\vspace{0.3cm}
+
+% Body paragraphs
+I am writing to express my strong interest in the \highlight{{TARGET_POSITION}} position that I found on \textbf{{JOB_SOURCE}}. As a professional with proven international collaboration experience and a track record of success in competitive environments, I am excited about the opportunity to contribute to your team.
+
+My background aligns well with your requirements for this role. I have experience with \textbf{{JOB_REQUIREMENTS}}, which directly relates to what you're seeking. In my current position as Head of IT at NJ Consulting, I've successfully led projects and managed diverse responsibilities that have prepared me for this opportunity.
+
+\textbf{What particularly attracts me to this position:}
+\begin{itemize}
+\item The opportunity to work with \highlight{{TARGET_COMPANY}} and contribute to your mission
+\item The chance to apply my skills in \textbf{{JOB_REQUIREMENTS}}
+\item Your company's reputation for excellence and innovation
+\item The potential for professional growth and development in \textbf{{TARGET_LOCATION}}
+\end{itemize}
+
+\textbf{Recent achievements that demonstrate my capabilities:}
+\begin{itemize}
+\item \highlight{Won Supabase Launch Week 14 competition} with our AI productivity platform "Thimar"
+\item \highlight{Led a 3-person international team} to competition victory
+\item Successfully managed complex projects with international stakeholders
+\item Proven track record of delivering results in competitive environments
+\item Strong problem-solving and analytical skills relevant to \textbf{{EXPERIENCE_LEVEL}} positions
+\end{itemize}
+
+{CUSTOM_PARAGRAPH}
+
+I am currently pursuing my Master's in Information Systems and am ready to relocate with appropriate visa sponsorship. As an international candidate, I bring:
+
+\begin{itemize}
+\item Strong English communication skills for effective collaboration
+\item Experience working with diverse, international project teams
+\item Fresh perspectives and cross-cultural competence
+\item Dedication and strong work ethic
+\item Immediate availability upon visa approval
+\end{itemize}
+
+I have attached my resume, which has been customized to highlight my relevant experience for this specific role at \highlight{{TARGET_COMPANY}}. I would welcome the opportunity to discuss how my skills, international perspective, and proven track record can contribute to your team's continued success.
+
+Thank you for considering my application. I look forward to hearing from you and discussing this exciting opportunity further.
+
+\vspace{0.5cm}
+
+Best regards,
+
+\vspace{0.8cm}
+
+\textbf{M'hamed Babah}
+
+\vspace{1cm}
+
+% Footer with application details
+\begin{center}
+\footnotesize
+\textcolor{secondarycolor}{
+\rule{\textwidth}{0.5pt} \\
+\textbf{Application Details:} {TARGET_POSITION} at {TARGET_COMPANY} | {TARGET_LOCATION} \\
+Source: {JOB_SOURCE} | Application Date: {APPLICATION_DATE} \\
+Job URL: {JOB_URL} | Generated: {GENERATION_DATE}
+}
+\end{center}
+
+\end{document}

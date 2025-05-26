@@ -6,15 +6,7 @@
 .env.production
 
 # Generated resumes (contain personal data)
-generated_resumes/
-resumes/
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-job_applications.db
-data/
+job_applications/
 
 # Log files
 logs/
@@ -62,8 +54,6 @@ chromedriver.exe
 *.bak
 *.backup
 
-# Screenshots (if any)
-screenshots/
 
 # Test files
 test_*.py
