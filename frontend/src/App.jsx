@@ -1,33 +1,54 @@
-import { Box, Container, Heading, Text, VStack } from '@chakra-ui/react'
+import { ChakraProvider, Box } from '@chakra-ui/react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import { storage } from './services/storage'
+
+// Components
+import Navbar from './components/Navbar'
+
+// Pages
+import Onboarding from './pages/Onboarding'
+import JobSearch from './pages/JobSearch'
+import Applications from './pages/Applications'
 
 function App() {
-  const [message, setMessage] = useState('')
+  const [hasUserInfo, setHasUserInfo] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchMessage = async () => {
-      try {
-        const response = await axios.get('/api/')
-        setMessage(response.data.message)
-      } catch (error) {
-        console.error('Error fetching message:', error)
-        setMessage('Error connecting to the backend')
-      }
-    }
-
-    fetchMessage()
+    const userInfo = storage.getUserInfo()
+    setHasUserInfo(!!userInfo)
+    setLoading(false)
   }, [])
 
+  if (loading) {
+    return null
+  }
+
   return (
-    <Container maxW="container.xl" py={10}>
-      <VStack spacing={8}>
-        <Heading>Easy Apply</Heading>
-        <Box p={6} shadow="md" borderRadius="lg" bg="white" w="full">
-          <Text fontSize="xl">{message || 'Loading...'}</Text>
+    <ChakraProvider>
+      <Router>
+        <Box minH="100vh" bg="gray.50">
+          {hasUserInfo && <Navbar />}
+          <Box maxW="1200px" mx="auto" px={4} py={8}>
+            <Routes>
+              <Route 
+                path="/" 
+                element={hasUserInfo ? <Navigate to="/jobs" /> : <Onboarding />} 
+              />
+              <Route 
+                path="/jobs" 
+                element={hasUserInfo ? <JobSearch /> : <Navigate to="/" />} 
+              />
+              <Route 
+                path="/applications" 
+                element={hasUserInfo ? <Applications /> : <Navigate to="/" />} 
+              />
+            </Routes>
+          </Box>
         </Box>
-      </VStack>
-    </Container>
+      </Router>
+    </ChakraProvider>
   )
 }
 
