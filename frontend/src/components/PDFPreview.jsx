@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, Box } from '@chakra-ui/react'
+import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, Box, Spinner, Center } from '@chakra-ui/react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
@@ -26,7 +26,11 @@ const PDFPreview = ({ isOpen, onClose, pdfUrl }) => {
             <Document
               file={pdfUrl}
               onLoadSuccess={onDocumentLoadSuccess}
-              loading={<LoadingSpinner />}
+              loading={
+                <Center p={10}>
+                  <Spinner size="xl" color="blue.500" />
+                </Center>
+              }
             >
               <Page
                 pageNumber={pageNumber}

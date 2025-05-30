@@ -35,26 +35,23 @@ import {
 import { jobAPI } from '../services/api'
 import { storage } from '../services/storage'
 
-const jobTypes = ["Full-time", "Part-time", "Contract", "Internship", "Temporary"]
-const experienceLevels = ["Entry-level", "Junior", "Mid-level", "Senior", "Lead", "Principal"]
-
 function JobSearch() {
   const [keywords, setKeywords] = useState('')
   const [location, setLocation] = useState('')
-  const [jobTypeFilter, setJobTypeFilter] = useState('')
-  const [experienceFilter, setExperienceFilter] = useState('')
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedJob, setSelectedJob] = useState(null)
   const [generating, setGenerating] = useState(false)
+  const [generatedDocuments, setGeneratedDocuments] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen: isSuccessOpen, onOpen: onSuccessOpen, onClose: onSuccessClose } = useDisclosure()
   const toast = useToast()
 
   const handleSearch = async () => {
-    if (!keywords.trim() && !location.trim() && !jobTypeFilter && !experienceFilter) {
+    if (!keywords.trim() && !location.trim()) {
       toast({
-        title: 'Filter Required',
-        description: 'Please enter keywords or select a filter to start a search.',
+        title: 'Search Required',
+        description: 'Please enter keywords or location to start a search.',
         status: 'info',
         duration: 3000,
         isClosable: true,
@@ -65,7 +62,7 @@ function JobSearch() {
     setLoading(true)
     setJobs([])
     try {
-      const results = await jobAPI.searchJobs(keywords, location, jobTypeFilter, experienceFilter)
+      const results = await jobAPI.searchJobs(keywords, location)
       setJobs(results)
       if (results.length === 0) {
         toast({
@@ -99,6 +96,7 @@ function JobSearch() {
     try {
       const userInfo = storage.getUserInfo()
       const resumeText = storage.getResume()
+      const linkedInData = storage.getLinkedInData()
 
       if (!userInfo || !resumeText) {
         toast({
@@ -112,25 +110,47 @@ function JobSearch() {
         return
       }
       
+      // Combine all user data sources
       const enrichedUserInfo = {
         ...userInfo,
         resume: resumeText,
+        linkedin_data: linkedInData,
+        // Add the job info for context
+        target_job: {
+          title: selectedJob.title,
+          company: selectedJob.company,
+          description: selectedJob.description,
+          technologies: selectedJob.technologies || [],
+          experience_level: selectedJob.experience_level
+        }
       }
 
       const resumeResult = await jobAPI.generateResume(selectedJob.description, enrichedUserInfo)
       const coverLetterResult = await jobAPI.generateCoverLetter(selectedJob.description, selectedJob.company, enrichedUserInfo)
 
+      // Store the PDF URLs
+      const docs = {
+        resumeUrl: resumeResult.url,
+        resumeBlob: resumeResult.blob,
+        coverLetterUrl: coverLetterResult.url,
+        coverLetterBlob: coverLetterResult.blob
+      }
+      setGeneratedDocuments(docs)
+
       const applications = JSON.parse(localStorage.getItem('applications') || '[]')
       applications.push({
         id: selectedJob.id + '_' + Date.now(),
         job: selectedJob,
-        generatedResume: resumeResult.resume,
-        generatedCoverLetter: coverLetterResult.coverLetter,
+        generatedResumeUrl: resumeResult.url,
+        generatedCoverLetterUrl: coverLetterResult.url,
         appliedDate: new Date().toISOString(),
         status: 'Generated'
       })
       localStorage.setItem('applications', JSON.stringify(applications))
 
+      onClose() // Close the generation modal
+      onSuccessOpen() // Open the success modal
+      
       toast({
         title: 'Application Generated',
         description: 'Resume and cover letter are ready!',
@@ -150,39 +170,38 @@ function JobSearch() {
     setGenerating(false)
   }
 
+  const downloadDocument = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Box p={5}>
       <VStack spacing={6} align="stretch">
         <Heading size="xl" textAlign="center">Find Your Next Opportunity</Heading>
 
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={4}>
-          <GridItem>
-            <Input
-              placeholder="Keywords (e.g., Python, React)"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              size="lg"
-            />
-          </GridItem>
-          <GridItem>
-            <Input
-              placeholder="Location (e.g., Remote, London)"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              size="lg"
-            />
-          </GridItem>
-          <GridItem>
-            <Select placeholder="Job Type (All)" value={jobTypeFilter} onChange={(e) => setJobTypeFilter(e.target.value)} size="lg">
-              {jobTypes.map(type => <option key={type} value={type}>{type}</option>)}
-            </Select>
-          </GridItem>
-          <GridItem>
-            <Select placeholder="Experience Level (All)" value={experienceFilter} onChange={(e) => setExperienceFilter(e.target.value)} size="lg">
-              {experienceLevels.map(level => <option key={level} value={level}>{level}</option>)}
-            </Select>
-          </GridItem>
-        </Grid>
+        <HStack spacing={4} width="full">
+          <Input
+            placeholder="Keywords (e.g., Python, React)"
+            value={keywords}
+            onChange={(e) => setKeywords(e.target.value)}
+            size="lg"
+            flex={1}
+          />
+          <Input
+            placeholder="Location (e.g., Remote, London)"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            size="lg"
+            flex={1}
+          />
+        </HStack>
         
         <Button
           colorScheme="blue"
@@ -190,7 +209,6 @@ function JobSearch() {
           isLoading={loading}
           size="lg"
           width="full"
-          mt={2}
         >
           Search Jobs
         </Button>
@@ -310,6 +328,50 @@ function JobSearch() {
                 loadingText="Generating..."
               >
                 Confirm & Generate
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Success Modal */}
+      {generatedDocuments && (
+        <Modal isOpen={isSuccessOpen} onClose={onSuccessClose} size="lg" isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Documents Generated Successfully!</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <VStack spacing={4} align="stretch">
+                <Text>Your customized resume and cover letter have been generated as PDFs.</Text>
+                
+                <HStack spacing={4} justify="center">
+                  <Button
+                    colorScheme="blue"
+                    leftIcon={<Text>📄</Text>}
+                    onClick={() => downloadDocument(generatedDocuments.resumeBlob, `resume_${selectedJob.company}_${Date.now()}.pdf`)}
+                  >
+                    Download Resume
+                  </Button>
+                  <Button
+                    colorScheme="green"
+                    leftIcon={<Text>📝</Text>}
+                    onClick={() => downloadDocument(generatedDocuments.coverLetterBlob, `cover_letter_${selectedJob.company}_${Date.now()}.pdf`)}
+                  >
+                    Download Cover Letter
+                  </Button>
+                </HStack>
+                
+                <Divider />
+                
+                <Text fontSize="sm" color="gray.600">
+                  You can also view your generated documents in the Applications page.
+                </Text>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" onClick={onSuccessClose}>
+                Close
               </Button>
             </ModalFooter>
           </ModalContent>

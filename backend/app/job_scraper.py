@@ -350,13 +350,52 @@ class JobScraper:
     def calculate_relevance_score(self, job_text: str, keywords: str) -> float:
         """Calculate relevance score between job and search keywords."""
         job_text_lower = job_text.lower()
-        keywords_lower = keywords.lower().split(',')
+        keywords_lower = keywords.lower()
+        
+        # Define conflicting terms - if user searches for one, exclude the others
+        experience_conflicts = {
+            'junior': ['senior', 'lead', 'principal', 'staff', 'architect', 'manager', 'director', 'head of'],
+            'entry': ['senior', 'lead', 'principal', 'staff', 'architect', 'manager', 'director', 'head of', 'mid-level', 'experienced'],
+            'entry-level': ['senior', 'lead', 'principal', 'staff', 'architect', 'manager', 'director', 'head of', 'mid-level', 'experienced'],
+            'intern': ['senior', 'lead', 'principal', 'staff', 'architect', 'manager', 'director', 'head of', 'mid-level', 'experienced'],
+            'senior': ['junior', 'entry', 'entry-level', 'intern', 'trainee', 'graduate'],
+            'lead': ['junior', 'entry', 'entry-level', 'intern', 'trainee', 'graduate'],
+            'principal': ['junior', 'entry', 'entry-level', 'intern', 'trainee', 'graduate', 'mid-level'],
+        }
+        
+        # Add job type conflicts
+        job_type_conflicts = {
+            'full-time': ['part-time', 'contract', 'freelance', 'temporary', 'intern'],
+            'part-time': ['full-time'],
+            'contract': ['full-time', 'permanent'],
+            'freelance': ['full-time', 'permanent'],
+            'permanent': ['contract', 'freelance', 'temporary'],
+            'remote': ['on-site only', 'in-office only'],
+        }
+        
+        # Check for conflicting terms
+        for search_term, conflicts in experience_conflicts.items():
+            if search_term in keywords_lower:
+                # If any conflicting term is found in the job text, return 0 score
+                for conflict in conflicts:
+                    if conflict in job_text_lower:
+                        return 0.0
+        
+        # Check job type conflicts
+        for search_term, conflicts in job_type_conflicts.items():
+            if search_term in keywords_lower:
+                for conflict in conflicts:
+                    if conflict in job_text_lower:
+                        return 0.0
+        
+        # Split keywords by common delimiters
+        keyword_list = re.split(r'[,\s]+', keywords_lower)
+        keyword_list = [k.strip() for k in keyword_list if k.strip()]
         
         score = 0.0
-        total_keywords = len(keywords_lower)
+        total_keywords = len(keyword_list)
         
-        for keyword in keywords_lower:
-            keyword = keyword.strip()
+        for keyword in keyword_list:
             if not keyword:
                 continue
                 
@@ -370,9 +409,11 @@ class JobScraper:
                     score += 15.0
                     break
             
-            # Partial match
-            if any(part in job_text_lower for part in keyword.split()):
-                score += 5.0
+            # Partial match (only for longer keywords to avoid false positives)
+            if len(keyword) > 3:
+                keyword_parts = keyword.split()
+                if any(part in job_text_lower for part in keyword_parts if len(part) > 3):
+                    score += 5.0
         
         # Normalize score
         max_possible_score = total_keywords * 20.0
@@ -711,7 +752,7 @@ class JobScraper:
         
         return jobs
 
-    def scrape_all_sources(self, keywords: str, location: str = "", job_type_filter: Optional[str] = None, experience_filter: Optional[str] = None, max_total: int = 25) -> List[JobPosting]:
+    def scrape_all_sources(self, keywords: str, location: str = "", max_total: int = 25) -> List[JobPosting]:
         """Scrape from specified real sources only."""
         all_jobs = []
         
@@ -759,57 +800,36 @@ class JobScraper:
         
         unique_jobs = list(unique_jobs_dict.values())
         
+        # Filter out jobs with zero relevance (indicates conflicting terms)
+        unique_jobs = [job for job in unique_jobs if job.relevance_score > 0]
+        
         # Sort by relevance score (highest first)
         unique_jobs.sort(key=lambda x: x.relevance_score, reverse=True)
         
-        logger.info(f"--- Debug: Pre-Filter --- ")
-        logger.info(f"job_type_filter received: '{job_type_filter}'")
-        logger.info(f"experience_filter received: '{experience_filter}'")
-        logger.info(f"{len(unique_jobs)} unique jobs available before applying specific type/experience filters.")
-        if unique_jobs:
-            logger.info(f"First unique job example: Title='{unique_jobs[0].title}', Type='{unique_jobs[0].job_type}', Exp='{unique_jobs[0].experience_level}'")
-
-        # Apply additional filters if provided
-        filtered_jobs = unique_jobs
-        if job_type_filter:
-            logger.info(f"APPLYING job_type_filter: '{job_type_filter}'. Current job count: {len(filtered_jobs)}")
-            original_count = len(filtered_jobs)
-            filtered_jobs = [job for job in filtered_jobs if job.job_type and job_type_filter.lower() in job.job_type.lower()]
-            logger.info(f"AFTER job_type_filter ('{job_type_filter}'): {len(filtered_jobs)} jobs remaining (was {original_count}).")
-
-        if experience_filter:
-            logger.info(f"APPLYING experience_filter: '{experience_filter}'. Current job count: {len(filtered_jobs)}")
-            original_count = len(filtered_jobs)
-            filtered_jobs = [job for job in filtered_jobs if job.experience_level and experience_filter.lower() in job.experience_level.lower()]
-            logger.info(f"AFTER experience_filter ('{experience_filter}'): {len(filtered_jobs)} jobs remaining (was {original_count}).")
-            
-        # Return top jobs, up to max_total. No fallbacks.
-        final_jobs = filtered_jobs[:max_total]
-        logger.info(f"Returning {len(final_jobs)} real jobs after deduplication, sorting, and filtering.")
+        # Return top jobs, up to max_total
+        final_jobs = unique_jobs[:max_total]
+        logger.info(f"Returning {len(final_jobs)} real jobs after deduplication and sorting.")
         
         return final_jobs
 
-    def search_jobs(self, keywords: str, location: str = "", job_type_filter: Optional[str] = None, experience_filter: Optional[str] = None, max_results: int = 25) -> List[Dict]:
-        """Main search function that returns job dictionaries from real sources only."""
+    def search_jobs(self, keywords: str, location: str = "", max_results: int = 25) -> List[Dict]:
+        """
+        Main method to search for jobs across all sources.
+        """
         try:
-            job_postings = self.scrape_all_sources(keywords, location, job_type_filter, experience_filter, max_results)
-            jobs_data = [job.to_dict() for job in job_postings]
+            # Get jobs from all sources
+            jobs = self.scrape_all_sources(
+                keywords=keywords,
+                location=location,
+                max_total=max_results
+            )
             
-            if job_postings:
-                sources = {}
-                for job in job_postings:
-                    sources[job.source] = sources.get(job.source, 0) + 1
-                logger.info(f"Job sources breakdown (real jobs only): {sources}")
-                avg_relevance = sum(job.relevance_score for job in job_postings) / len(job_postings)
-                logger.info(f"Average relevance score (real jobs only): {avg_relevance:.1f}")
-            else:
-                logger.info("No real job postings found from any source.")
-            
-            return jobs_data
+            # Convert to dictionaries for JSON response
+            return [job.to_dict() for job in jobs]
             
         except Exception as e:
-            logger.error(f"Error in search_jobs: {e}")
-            return [] # Return empty list on error, as no fallbacks are used
+            logger.error(f"Error in search_jobs: {str(e)}")
+            return []
 
     def save_jobs_to_file(self, jobs: List[Dict], filename: str = "jobs.json"):
         """Save jobs to JSON file with proper formatting."""
